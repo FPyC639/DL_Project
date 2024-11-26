@@ -31,8 +31,7 @@ def node_to_string(src: bytes, node):
 
 
 def make_parser():
-    _parser = Parser()
-    _parser.set_language(LANGUAGE)
+    _parser = Parser(LANGUAGE)
     return _parser
 
 

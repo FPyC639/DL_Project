@@ -1,3 +1,4 @@
+from seed_gathering.fetch_code_from_s3 import download_contents
 from tree_sitter_parser import LANGUAGE, make_parser, node_to_string
 import datasets
 import os
@@ -16,20 +17,20 @@ TOPLEVEL_DOCSTRING_QUERY = LANGUAGE.query("""
 def get_fns_with_docstrings(src, tree):
     captures = TOPLEVEL_DOCSTRING_QUERY.captures(tree.root_node)
     res = []
-    for capture in captures:
-        node, ty = capture
-        if ty != "function.def":
-            continue
+    function_nodes = captures.get("function.def", [])
+
+    for node in function_nodes:
         # if the starting col is not 0, then it's not a top-level fn
         _, col = node.start_point
         if col != 0:
             continue
         res.append(node_to_string(src, node))
+
     return res
 
 
 def parse_ex(parser, ex):
-    ex = ex["content"]
+    ex = download_contents(ex["blob_id"], ex["src_encoding"])
     try:
         buf = bytes(ex, "utf8")
         tree = parser.parse(buf)
@@ -56,13 +57,12 @@ def process_chunk(idx_and_chunk):
 def main(args):
     global PARSERS
     ds = datasets.load_dataset(
-        args.dataset,
-        data_dir=args.data_dir,
-        split="train[:0.001%]",
-    )
+        "bigcode/the-stack-v2-dedup", data_dir="data/C++",
+        split='train', streaming=True)
+    dataset_head = ds.take(200)
     funs = set()
     PARSERS = [make_parser() for _ in range(args.num_workers)]
-    total_len = len(ds)
+    total_len = len(list(dataset_head))
     CHUNK_SIZE = 1000 * args.num_workers
 
     print(f"Total length: {total_len}")
