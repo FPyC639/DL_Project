@@ -5,11 +5,19 @@ import os
 import signal
 from multiprocessing import Pool
 
+# ASSUMING COMMENTS WITHIN A FUNCTION ARE DOCSTRINGS
 TOPLEVEL_DOCSTRING_QUERY = LANGUAGE.query("""
 (
-    (function_definition
-      body: (compound_statement .
-        (comment) @docstring)) @function.def
+  (function_definition
+    type: (_)                 
+    declarator: (
+      function_declarator
+        declarator: (identifier) @function.name
+        parameters: (parameter_list)
+    )
+    body: (compound_statement .
+      (comment) @docstring)
+  ) @function.def
 )
 """)
 
@@ -17,6 +25,7 @@ TOPLEVEL_DOCSTRING_QUERY = LANGUAGE.query("""
 def get_fns_with_docstrings(src, tree):
     captures = TOPLEVEL_DOCSTRING_QUERY.captures(tree.root_node)
     res = []
+    # SELECTING FUNCTIONS THAT HAVE "DOCSTRINGS"
     function_nodes = captures.get("function.def", [])
 
     for node in function_nodes:
