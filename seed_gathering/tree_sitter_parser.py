@@ -34,9 +34,7 @@ def get_fn_name(code, parser=global_parser):
 
 
 def node_to_string(src: bytes, node):
-    _, start_byte = node.start_point
-    _, end_byte = node.end_point
-    return src[start_byte:(end_byte + 1)].decode("utf8")
+    return src[node.start_byte:node.end_byte].decode("utf8")
 
 
 def make_parser():
