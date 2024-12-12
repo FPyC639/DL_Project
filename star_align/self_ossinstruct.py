@@ -437,13 +437,21 @@ async def main():
 	if args.use_vllm_server:
 			openai_client = star_align.utils.OpenAIClient()
 
-	raw_dataset: Dataset = load_dataset(
-			"json",
-			data_files=args.seed_data_files,
-			split="train",
-			num_proc=star_align.utils.N_CORES,
-	)
-	id_key = "seed"
+	# raw_dataset: Dataset = load_dataset(
+    #     "json",
+    #     data_files=args.seed_data_files,
+    #     split="train",
+    #     num_proc=N_CORES,
+    # )
+
+    ### Modification for collab to fetch from HF data repo
+    raw_dataset: Dataset = load_dataset(
+        args.seed_data_files,
+        split="train",
+        num_proc=N_CORES,
+    )
+
+    id_key = "seed"
 	if os.getenv("IGNORE_SEED_CHECK") is None:
 			assert len(set(d[id_key] for d in raw_dataset)) == len(
 					raw_dataset
@@ -530,4 +538,9 @@ async def main():
 
 
 if __name__ == "__main__":
+    ### ARGS FOR RUNNING THE SCRIPT
+    # seed_data_files=an778/cppHeaderFiles
+    # model=/project/phan/codellama/StarCoder
+    # instruct_mode = “S->C” -> “C->I” -> “I->R” (in order)
+    # use_vllm_server=True
     asyncio.run(main())
