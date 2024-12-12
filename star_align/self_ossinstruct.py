@@ -464,6 +464,7 @@ async def main():
 	end_index = min(start_index + args.max_new_data, len(raw_dataset))
 	raw_dataset = raw_dataset.select(range(start_index, end_index))
 	dataset = raw_dataset.to_list()
+    print(dataset)
 
 	assert args.prompting_mode == "completion", "Only completion is supported for now"
 	fewshot = get_ossinstruct_fewshots()
