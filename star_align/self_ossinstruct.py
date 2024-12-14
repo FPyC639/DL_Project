@@ -544,6 +544,46 @@ async def main():
 							choices=choices,
 							system_fingerprint="None",
 					)
+                  
+	for chunk_index, examples in enumerate(pbar):
+		# map to the index in the original seed snippets
+		effective_index = (
+				chunk_index * args.num_batched_requests + start_index + n_skipped
+		)
+		print("Effective index:", effective_index)
+		if chunk_index > 0 and args.sleep is not None:
+				print(f"Sleeping for {args.sleep} seconds...")
+				time.sleep(args.sleep)
+		# assert index + start_index == example["index"]
+		request_params = list[dict[str, Any]]()
+		all_prompts = list[str]()
+		for index, example in enumerate(examples):
+			seed = args.seed + effective_index + index
+			random.seed(seed)
+			kwargs = build_kwargs(args.instruct_mode, example)
+			prompt = fewshot.random_prompt(
+					args.instruct_mode,
+					args.num_fewshots,
+					prompting_mode=args.prompting_mode,
+					**kwargs,
+			)
+			prompt = prompt.rstrip()
+			all_prompts.append(prompt)
+			max_new_tokens = args.max_output_tokens
+			params: dict = dict(
+					model=args.model,
+					max_tokens=max_new_tokens,
+					n=args.num_sample_per_request,
+					temperature=args.temperature,
+					seed=seed,
+			)
+			params["prompt"] = prompt
+			params["stop"] = ["## Example"]
+			if args.instruct_mode == "I->R":
+					params["stop"].append("</tests>")
+			request_params.append(params)
+	assert len(request_params) == len(examples)
+	print(f"Ready to make {len(request_params)} requests")
 
 
 if __name__ == "__main__":
