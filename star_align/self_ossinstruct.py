@@ -12,7 +12,7 @@ from datasets import Dataset, load_dataset
 from tqdm.auto import tqdm
 from transformers import HfArgumentParser
 
-import star_align
+import utils 
 
 InstructMode = Literal["I->R", "S->C", "C->I", "S->I"]
 
@@ -113,7 +113,7 @@ class Args:
             self.max_output_tokens,
             fewshot,
         )
-        return star_align.utils.compute_fingerprint(*args, hash_length=5)
+        return utils.compute_fingerprint(*args, hash_length=5)
 
 
 @dataclass(frozen=True)
@@ -341,7 +341,7 @@ def get_ossinstruct_fewshots() -> Fewshot:
     # instruction_system_prompt = instruction_system_prompt.strip()
     # response_system_prompt = response_system_prompt.strip()
     examples_str = [example.strip() for example in splits[1:]]
-    assert len(examples_str) == 21, len(examples_str)
+    assert len(examples_str) == 10, len(examples_str)
     examples = list[Example]()
     for example_str in examples_str:
         pattern = (
@@ -435,7 +435,7 @@ async def main():
 					args.num_sample_per_request == 1
 			), "Only support 1 sample with batched async requests"
 	if args.use_vllm_server:
-			openai_client = star_align.utils.OpenAIClient()
+			openai_client = utils.OpenAIClient()
 
 	# raw_dataset: Dataset = load_dataset(
     #     "json",
@@ -445,13 +445,13 @@ async def main():
     # )
 
     ### Modification for collab to fetch from HF data repo
-    raw_dataset: Dataset = load_dataset(
-        args.seed_data_files,
+	raw_dataset: Dataset = load_dataset(
+        args.seed_data_files[0],
         split="train",
-        num_proc=N_CORES,
+        num_proc=utils.N_CORES,
     )
 
-    id_key = "seed"
+	id_key = "seed"
 	if os.getenv("IGNORE_SEED_CHECK") is None:
 			assert len(set(d[id_key] for d in raw_dataset)) == len(
 					raw_dataset
@@ -464,12 +464,11 @@ async def main():
 	end_index = min(start_index + args.max_new_data, len(raw_dataset))
 	raw_dataset = raw_dataset.select(range(start_index, end_index))
 	dataset = raw_dataset.to_list()
-    print(dataset)
 
 	assert args.prompting_mode == "completion", "Only completion is supported for now"
 	fewshot = get_ossinstruct_fewshots()
 	data_fingerprint = args.fingerprint(fewshot)
-	timestamp = star_align.utils.timestamp()
+	timestamp = utils.timestamp()
 
 	if args.continue_from is not None:
 			if os.getenv("IGNORE_FINGERPRINT") is None:
@@ -479,7 +478,7 @@ async def main():
 			assert f"-{start_index}-" in args.continue_from, "Index mismatch"
 			old_path = Path(args.continue_from)
 			assert old_path.exists()
-			old_data = star_align.utils.read_jsonl(old_path)
+			old_data = utils.read_jsonl(old_path)
 			assert len(old_data) > 0
 			last_seed = old_data[-1][id_key]
 			# Find seed
@@ -503,7 +502,7 @@ async def main():
 			n_skipped = 0
 	dataset = dataset[n_skipped:]
 	chunked_dataset = list(
-			star_align.utils.chunked(dataset, n=args.num_batched_requests)
+			utils.chunked(dataset, n=args.num_batched_requests)
 	)
 	pbar = tqdm(chunked_dataset)
 	n_succeeded = 0
@@ -512,7 +511,16 @@ async def main():
 			from vllm import LLM, SamplingParams, RequestOutput
 			import torch
 
-			engine = LLM(args.model, tensor_parallel_size=torch.cuda.device_count())
+		# Check for MPS availability
+			if torch.backends.mps.is_available():
+					device = "mps"
+					tensor_parallel_size = 1  # MPS currently does not support tensor parallelism
+			else:
+					device = "cpu"
+					tensor_parallel_size = 1
+
+			# Initialize the LLM engine with the appropriate device
+			engine = LLM(args.model, tensor_parallel_size=tensor_parallel_size, device=device)
 
 			def vllm_response_to_openai(response: RequestOutput) -> Completion:
 					created = 0

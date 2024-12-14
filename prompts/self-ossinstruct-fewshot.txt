@@ -1,0 +1,1171 @@
+### System: I->R
+You are an extremely intelligent AI coding assistant. Please provide an accurate and reliable response to each user instruction. After delivering your response, verify its consistency and correctness by writing a series of executable tests.
+
+### System: C->I
+Create a series of independent coding tasks that are original, distinct, diverse, and high-quality, fostering logical thinking. Each task must adhere to specified properties:
+
+- category: the type of task (e.g., function implementation, class implementation, or program implementation)
+- language: the programming language to be used
+- difficulty: the complexity level of the task (e.g., easy, medium, or hard)
+- concepts: fundamental principles and techniques the task is designed to incorporate, which developers must understand to effectively solve the task
+
+Design the tasks so that the relevant concepts emerge naturally as the most appropriate solutions, without explicitly mentioning that a particular concept should be used.
+
+### System: S->C
+Extract key programming concepts from the provided code snippet. Programming concepts refer to the foundational principles and techniques used in programming, which are crucial for developers to master. List these concepts in a comma-separated format.
+
+### System: S->I
+Gain inspiration from the given code snippets and create a series of independent coding tasks that are original, distinct, diverse, and high-quality, fostering logical thinking.
+
+### Example 1
+[Code]
+#include <iostream>
+#include <string>
+#include <vector>
+#include <algorithm>
+
+std::string encodeIntegerToChars(int value) {
+    if (value == 0) {
+        return std::string(1, static_cast<char>(63));
+    }
+
+    std::vector<char> encodedChars;
+
+    while (value > 0) {
+        // Extract the last 5 bits and add 63 to form the ASCII value
+        char chunk = static_cast<char>((value & 31) + 63);
+        value >>= 5; // Right shift by 5 bits
+
+        // If there are more chunks, set the continuation bit (6th bit)
+        if (value > 0) {
+            chunk |= 32; // Set the 6th bit to 1
+        }
+
+        // Add the chunk to the vector
+        encodedChars.push_back(chunk);
+    }
+
+    // Reverse the order of the characters to preserve the correct encoding order
+    std::reverse(encodedChars.begin(), encodedChars.end());
+
+    return std::string(encodedChars.begin(), encodedChars.end());
+}
+
+
+[Property]
+category: function implementation
+language: C++
+difficulty: medium
+concepts: 5-bit chunk encoding with bitwise shifts, ASCII value manipulation, continuation bit signaling
+
+[Instruction]
+Create a C++ function to encode an integer into a sequence of encoded characters, where each character represents a 5-bit chunk of the integer. The ASCII value of each chunk character is formed by adding 63 to the 5-bit chunk's value. For all chunks except the last one, set the 6th bit to 1 to indicate continuation. Employ bitwise operations for this encoding process.
+
+[Response]
+To encode an integer into a sequence of encoded characters based on the specified criteria, let's follow these steps:
+
+1. Break down the integer into 5-bit chunks: Extract 5-bit chunks from the integer using `& 31` (`0x1F`), because the binary representation of `31` (`11111`) has the last five bits set, which will effectively extract the 5 bits we are interested in. We start from the least significant bits (LSB).
+2. Set continuation bit: For all chunks except the last one, set the 6th bit to 1 using `| 32` (`0x20`) because the binary representation of `32` (`100000`) has the 6th bit set to 1. This indicates that there's another continuation chunk following.
+3. Shift right: Right-shift the value by 5 to process the next 5 bits.
+4. Convert to characters: Use addition of `63` to each chunk (now effectively 6 bits due to the continuation bit) to convert it into a printable ASCII character.
+5. Assembly: Assemble these characters into the final encoded string while maintaining the order of the chunks through `std::reverse`.
+
+Here's how you can implement this function:
+
+```cpp
+#include <iostream>
+#include <string>
+#include <vector>
+#include <algorithm>
+
+std::string encodeIntegerToChars(int value) {
+    if (value == 0) {
+        return std::string(1, static_cast<char>(63));
+    }
+
+    std::vector<char> encodedChars;
+
+    while (value > 0) {
+        // Extract the last 5 bits and add 63 to form the ASCII value
+        char chunk = static_cast<char>((value & 31) + 63);
+        value >>= 5; // Right shift by 5 bits
+
+        // If there are more chunks, set the continuation bit (6th bit)
+        if (value > 0) {
+            chunk |= 32; // Set the 6th bit to 1
+        }
+
+        // Add the chunk to the vector
+        encodedChars.push_back(chunk);
+    }
+
+    // Reverse the order of the characters to preserve the correct encoding order
+    std::reverse(encodedChars.begin(), encodedChars.end());
+
+    return std::string(encodedChars.begin(), encodedChars.end());
+}
+```
+
+Keep in mind that this function is designed for non-negative integers. In C++, right-shifting (`>>`) a negative integer preserves the sign bit, which could lead to infinite loops or other incorrect behaviors if the same encoding approach is applied to negative integers without appropriate adjustments.
+
+[Tests]
+You can validate this function with the following test cases that cover scenarios from zero to a number requiring more than one chunk, ensuring the function operates as expected:
+
+```cpp
+#include <cassert>
+#include <string>
+
+int main() {
+    assert(encodeIntegerToChars(0) == "?");
+    assert(encodeIntegerToChars(1) == "@");
+    assert(encodeIntegerToChars(31) == "_");
+    assert(encodeIntegerToChars(33).length() > 1); // Multi-chunk encoding
+    return 0;
+}
+```
+
+### Example 2
+[Code]
+#include <cassert>
+#include <iostream>
+
+// Function to compute the ceiling of n / 2^b using bit manipulation
+int ceil_divide_without_div(int n, int b) {
+    // Assertions to ensure non-negative inputs
+    assert(n >= 0 && "n must be a non-negative integer");
+    assert(b >= 0 && "b must be a non-negative integer");
+
+    // If b is 0, 2^b is 1, and n / 2^b is just n
+    if (b == 0) {
+        return n;
+    }
+
+    // Compute the divisor as 2^b (left shift 1 by b positions)
+    int divisor = 1 << b;
+
+    // Add divisor - 1 to n, then right shift by b to compute the ceiling
+    return (n + divisor - 1) >> b;
+}
+
+[Property]
+category: function implementation
+language: C++
+difficulty: medium
+concepts: bitwise operation for division, ceiling without division or float, input validation with assertions, non-negative integer checks
+
+[Instruction]
+Develop a C++ function `ceil_divide_without_div` that computes the ceiling of `n / 2**b` without using division, floating-point operations, built-in functions like `math.ceil`, or converting it into computing the floor. Instead, use bit manipulation to achieve the result. You write assertions to ensure both `n` and `b` are non-negative integers.
+
+[Response]
+We can leverage the properties of bitwise operations to develop a C++ function that computes the ceiling of n/2b without using division, floating-point operations, or any built-in functions like math.ceil. This implementation avoids converting the problem into a floor computation and achieves the desired result through careful adjustment of the value before right-shifting.
+
+In this context, dividing by 2b is equivalent to right-shifting n by b bits in binary representation. However, right-shifting inherently computes the floor of the division. To achieve the ceiling effect, we add 2b − 1 to n before performing the shift. This adjustment ensures that any remainder pushes the result up to the next integer.
+
+Key Steps in the Implementation:
+Bitwise Shift for Division: Right-shifting n by b bits (n>>b) effectively divides n by 2b, rounding down to the nearest integer.
+Adjust for Ceiling: Adding 2b−1 (1<<b−1) to n before the shift ensures that the division rounds up if there is any remainder.
+Handling Special Cases: When b=0, 2b =1, and the division becomes trivial. The code handles this case explicitly to avoid unnecessary calculations.
+Assertions: The function uses assert statements to enforce that both n and b are non-negative integers. This guards against invalid inputs and ensures correctness.
+
+```cpp
+#include <cassert>
+int ceil_divide_without_div(int n, int b) {
+    assert(n >= 0 && "n must be a non-negative integer");
+    assert(b >= 0 && "b must be a non-negative integer");
+    if (b == 0) {
+        return n; // Dividing by 1 is trivial
+    }
+    int divisor = 1 << b; // Compute 2^b using left shift
+    return (n + divisor - 1) >> b; // Adjust n for ceiling and right-shift
+}
+```
+
+This function calculates the ceiling of `n / 2**b` purely through bitwise manipulation and integer arithmetic. The assertions ensure the input constraints are met, as specified.
+
+[Tests]
+To verify the correctness of the function, we can compare the results of our function with the expected results obtained using `math.ceil` to ensure the correctness of the ceiling division operation:
+
+```cpp
+#include <iostream>
+
+int main() {
+    // Basic assertions to verify the function
+    assert(ceil_divide_without_div(0, 1) == 0);
+    assert(ceil_divide_without_div(1, 1) == 1);
+    assert(ceil_divide_without_div(3, 1) == 2);
+    assert(ceil_divide_without_div(7, 2) == 2);
+    assert(ceil_divide_without_div(15, 3) == 2);
+    assert(ceil_divide_without_div(9, 2) == 3);
+
+    // Edge cases
+    assert(ceil_divide_without_div(0, 0) == 0); // 0 / 1 = 0
+    assert(ceil_divide_without_div(5, 0) == 5); // 5 / 1 = 5
+
+    std::cout << "All test cases passed!\n";
+    return 0;
+}
+```
+### Example 3
+[Code]
+#include <vector>
+#include <cmath>
+
+class PrimeFinder {
+private:
+    std::vector<int> prime_list; // List to store calculated primes
+
+    // Helper method to check if a number is prime
+    bool is_prime(int n) {
+        if (n < 2) return false;
+        for (int prime : prime_list) {
+            if (prime * prime > n) break; // Stop if prime exceeds sqrt(n)
+            if (n % prime == 0) return false; // Divisible means not prime
+        }
+        return true;
+    }
+
+public:
+    // Constructor initializes with the first prime
+    PrimeFinder() {
+        prime_list.push_back(2); // Start with the first prime
+    }
+
+    // Method to find the nth prime using memoization
+    int find_nth_prime_memoized(int n) {
+        if (n <= 0) throw std::invalid_argument("n must be a positive integer");
+
+        // Continue generating primes until the nth prime is found
+        int current = prime_list.back() + 1; // Start checking from the next number
+        while (prime_list.size() < static_cast<size_t>(n)) {
+            if (is_prime(current)) {
+                prime_list.push_back(current); // Add to the list if prime
+            }
+            current++;
+        }
+
+        return prime_list[n - 1]; // Return the nth prime (0-indexed)
+    }
+};
+
+[Property]
+category: class implementation
+language: C++
+difficulty: medium
+concepts: prime number memoization, n-th prime calculation, efficiency in prime checks
+
+[Instruction]
+Implement a C++ class with a method `find_nth_prime_memoized(n)` that returns the nth prime number, where n is a positive integer. Utilize memoization to store already found prime numbers in a list within the class to avoid recalculating primes for multiple method calls. Ensure the method efficiently updates and references this list to find new primes as needed. Additionally, enhance performance by avoiding unnecessary prime checks.
+
+[Response]
+Implementing the required C++ class with the method find_nth_prime_memoized(n) involves several key steps:
+
+Initialization:
+The class constructor initializes a list prime_list to store memoized prime numbers. Initially, the list contains the first prime, 2. This serves as the starting point for all subsequent calculations.
+Memoization and Caching:
+The find_nth_prime_memoized method first checks if the nth prime is already in the prime_list. If it is, the method retrieves it directly. If the list is insufficient, the method calculates additional primes starting from the last number in the cache until the list contains at least n primes.
+Efficient Prime Checking:
+- A helper method is_prime is defined to determine if a number is prime:
+	It tests divisibility only with primes from the prime_list.
+	It limits checks to primes less than or equal to √candidate, implemented by   breaking the loop when the square of the prime exceeds the candidate.
+- The method skips redundant checks for even numbers since the cache starts with 2 and subsequent numbers are incremented by 1 during the prime-finding process.
+Error Handling:
+The find_nth_prime_memoized method includes a check to ensure the input n is a positive integer. If n is invalid, it throws an exception.
+
+Here is how you could implement such a class:
+
+```cpp
+#include <vector>
+#include <cmath>
+
+class PrimeFinder {
+private:
+    std::vector<int> prime_list; // List to store calculated primes
+
+    // Helper method to check if a number is prime
+    bool is_prime(int n) {
+        if (n < 2) return false;
+        for (int prime : prime_list) {
+            if (prime * prime > n) break; // Stop if prime exceeds sqrt(n)
+            if (n % prime == 0) return false; // Divisible means not prime
+        }
+        return true;
+    }
+
+public:
+    // Constructor initializes with the first prime
+    PrimeFinder() {
+        prime_list.push_back(2); // Start with the first prime
+    }
+
+    // Method to find the nth prime using memoization
+    int find_nth_prime_memoized(int n) {
+        if (n <= 0) throw std::invalid_argument("n must be a positive integer");
+
+        // Continue generating primes until the nth prime is found
+        int current = prime_list.back() + 1; // Start checking from the next number
+        while (prime_list.size() < static_cast<size_t>(n)) {
+            if (is_prime(current)) {
+                prime_list.push_back(current); // Add to the list if prime
+            }
+            current++;
+        }
+
+        return prime_list[n - 1]; // Return the nth prime (0-indexed)
+    }
+};
+```
+
+[Tests]
+Here's how you can test this class by verifying that the class correctly finds the first few primes and that subsequent calls return the memoized results directly:
+
+```cpp
+#include <iostream>
+#include <cassert>
+
+// Test function
+void test_find_nth_prime_memoized() {
+    // Create an instance of the PrimeFinder class
+    PrimeFinder primeFinder;
+
+    // Test 1: Validate the first few prime numbers
+    assert(primeFinder.find_nth_prime_memoized(1) == 2);  // 1st prime
+    assert(primeFinder.find_nth_prime_memoized(2) == 3);  // 2nd prime
+    assert(primeFinder.find_nth_prime_memoized(3) == 5);  // 3rd prime
+    assert(primeFinder.find_nth_prime_memoized(4) == 7);  // 4th prime
+    assert(primeFinder.find_nth_prime_memoized(5) == 11); // 5th prime
+
+    // Test 2: Validate higher primes
+    assert(primeFinder.find_nth_prime_memoized(10) == 29);  // 10th prime
+    assert(primeFinder.find_nth_prime_memoized(20) == 71);  // 20th prime
+    assert(primeFinder.find_nth_prime_memoized(50) == 229); // 50th prime
+
+    // Test 3: Test efficiency with larger primes
+    assert(primeFinder.find_nth_prime_memoized(100) == 541);  // 100th prime
+    assert(primeFinder.find_nth_prime_memoized(200) == 1223); // 200th prime
+    assert(primeFinder.find_nth_prime_memoized(500) == 3571); // 500th prime
+
+    // Test 4: Validate memoization (repeated calls for the same prime)
+    int nthPrime = primeFinder.find_nth_prime_memoized(10); // Cache the 10th prime
+    assert(primeFinder.find_nth_prime_memoized(10) == nthPrime); // Verify the cached value
+
+    // Test 5: Invalid input handling
+    try {
+        primeFinder.find_nth_prime_memoized(0); // Should throw an exception
+        assert(false); // If no exception, fail the test
+    } catch (const std::invalid_argument& e) {
+        assert(std::string(e.what()) == "n must be a positive integer.");
+    }
+
+    try {
+        primeFinder.find_nth_prime_memoized(-5); // Should throw an exception
+        assert(false); // If no exception, fail the test
+    } catch (const std::invalid_argument& e) {
+        assert(std::string(e.what()) == "n must be a positive integer.");
+    }
+
+    std::cout << "All tests passed!" << std::endl;
+}
+
+int main() {
+    test_find_nth_prime_memoized();
+    return 0;
+}
+```
+
+### Example 4
+[Code]
+class SpecialFormulas {
+public:
+    // Function f1(a, b)
+    static int f1(int a, int b) {
+        return (a + 1) * (b + 1) - 1;
+    }
+
+    // Function f2(k)
+    static int f2(int k) {
+        if (k % 2 == 1) { // k is odd
+            return ((k + 1) * (k + 1)) / 2 + k + 1;
+        } else { // k is even
+            return (k * k) / 2 + 2 * k + 1;
+        }
+    }
+
+    // Function to compute f2(f1(a, b))
+    static int compute(int a, int b) {
+        int f1Result = f1(a, b);
+        return f2(f1Result);
+    }
+};
+
+[Property]
+category: function implementation
+language: C++
+difficulty: easy
+concepts: special formula implementation, odd and even number handling, function composition
+
+[Instruction]
+Here are two special formulas:
+
+$$
+f_1(a, b) = (a + 1) \cdot (b + 1) - 1
+$$
+
+$$
+f_2(k) = \begin{cases}
+    \frac{(k + 1)^2}{2} + k + 1 & \text{if } k \text{ is odd} \\
+    \frac{k^2}{2} + 2k + 1 & \text{if } k \text{ is even}
+\end{cases}
+$$
+
+Write a C++ function to return $f_2(f_1(a, b))$ for given `a` and `b`.
+
+[Response]
+Based on the formulas you provided, we can define two C++ functions, `f1(a, b)` and `f2(k)`, respectively, and then combine them to calculate $f2(f1(a, b))$ for given `a` and `b`.
+
+Here is the implementation:
+
+```cpp
+class SpecialFormulas {
+public:
+    // Function f1(a, b)
+    static int f1(int a, int b) {
+        return (a + 1) * (b + 1) - 1;
+    }
+
+    // Function f2(k)
+    static int f2(int k) {
+        if (k % 2 == 1) { // k is odd
+            return ((k + 1) * (k + 1)) / 2 + k + 1;
+        } else { // k is even
+            return (k * k) / 2 + 2 * k + 1;
+        }
+    }
+
+    // Function to compute f2(f1(a, b))
+    static int compute(int a, int b) {
+        int f1Result = f1(a, b);
+        return f2(f1Result);
+    }
+};
+```
+
+In this implementation:
+
+- `f1(a, b)` calculates the first formula you've given.
+- `f2(k)` calculates the second formula, with a conditional branch for whether `k` is even or odd.
+- `f1_f2_combined(a, b)` uses the output of `f1(a, b)` as the input for `f2(k)` and returns the result.
+
+[Tests]
+To test this combined function, you can simply compare it with the direct application of `f2` to the result of `f1` for different values of `a` and `b`:
+
+```cpp
+#include <iostream> 
+#include <cassert>
+int main() {
+    // Test cases
+    assert(SpecialFormulas::compute(1, 1) == 14);  // f1(1, 1) = 5, f2(5) = 14
+    assert(SpecialFormulas::compute(2, 3) == 98);  // f1(2, 3) = 19, f2(19) = 98
+    assert(SpecialFormulas::compute(0, 0) == 3);   // f1(0, 0) = 0, f2(0) = 3
+    assert(SpecialFormulas::compute(5, 7) == 969); // f1(5, 7) = 47, f2(47) = 969
+
+    std::cout << "All test cases passed!" << std::endl;
+    return 0;
+}
+```
+
+### Example 5
+[Code]
+int findInsertionIndex(const std::vector<int>& array, int target) {
+    int left = 0;
+    int right = array.size(); // `right` is set to `array.size()` for a possible insertion at the end.
+
+    while (left < right) {
+        int mid = left + (right - left) / 2; // To prevent overflow
+
+        if (array[mid] < target) {
+            left = mid + 1; // Move the left pointer up
+        } else {
+            right = mid; // Move the right pointer down
+        }
+    }
+
+    return left; // The insertion index
+}
+
+[Property]
+category: function implementation
+language: C++
+difficulty: easy
+concepts: insertion point for a sorted array, optimized time complexity
+
+[Instruction]
+Design a C++ function that takes a sorted array and a target value, and return a valid index where target can be inserted to maintain the array's sorted order. Optimize the function to run in logarithmic time complexity.
+
+For example, given `array = [1, 3, 5, 5, 6]` and `target = 5`, the function should return either 2 or 3 because 5 presents at both indices 2 and 3.
+
+[Response]
+To solve this problem efficiently and ensure logarithmic time complexity, we can use a binary search algorithm. Compared with a standard binary search that looks for an exact match, we can modify the algorithm such that when the target is not found, we return the `left` bound, which represents the index where the target can be inserted to maintain the array's sorted order. Since any valid index for insertion is acceptable, we can direclty return the index if there is an exact match.
+
+Here is a C++ function that implements this approach:
+
+```cpp
+int findInsertionIndex(const std::vector<int>& array, int target) {
+    int left = 0;
+    int right = array.size(); // `right` is set to `array.size()` for a possible insertion at the end.
+
+    while (left < right) {
+        int mid = left + (right - left) / 2; // To prevent overflow
+
+        if (array[mid] < target) {
+            left = mid + 1; // Move the left pointer up
+        } else {
+            right = mid; // Move the right pointer down
+        }
+    }
+
+    return left; // The insertion index
+}
+```
+
+This implementation ensures that when `target` is not found, `left` represents the correct insertion index. This is because at the end of the loop, all elements to the left of `left` are smaller than `target`, all elements to the right of `left` are equal to or larger than `target`, and `left > right`. Therefore, `left` is the correct index for insertion to maintain the sorted order.
+
+[Tests]
+You can test the function with scenarios where the target is found at multiple indices and where the target is not present in the array:
+
+```cpp
+#include <cassert>
+#include <vector>
+
+int main() {
+    // Test case 1: Target exists in the array
+    std::vector<int> array1 = {1, 3, 5, 5, 6};
+    int result1 = findInsertionIndex(array1, 5);
+    assert(result1 == 2 || result1 == 3); // Should be either 2 or 3
+
+    // Test case 2: Target is smaller than the smallest element
+    std::vector<int> array2 = {1, 3, 5, 5, 6};
+    int result2 = findInsertionIndex(array2, 0);
+    assert(result2 == 0); // Should be inserted at index 0
+
+    // Test case 3: Target is greater than the largest element
+    std::vector<int> array3 = {1, 3, 5, 5, 6};
+    int result3 = findInsertionIndex(array3, 7);
+    assert(result3 == 5); // Should be inserted at index 5
+
+    // Test case 4: Target is between elements
+    std::vector<int> array4 = {1, 3, 5, 5, 6};
+    int result4 = findInsertionIndex(array4, 2);
+    assert(result4 == 1); // Should be inserted at index 1
+
+    // Test case 5: Empty array
+    std::vector<int> array5 = {};
+    int result5 = findInsertionIndex(array5, 5);
+    assert(result5 == 0); // Should be inserted at index 0
+
+    // Test case 6: Single element array, target less than element
+    std::vector<int> array6 = {3};
+    int result6 = findInsertionIndex(array6, 2);
+    assert(result6 == 0); // Should be inserted at index 0
+
+    // Test case 7: Single element array, target greater than element
+    std::vector<int> array7 = {3};
+    int result7 = findInsertionIndex(array7, 4);
+    assert(result7 == 1); // Should be inserted at index 1
+
+    std::cout << "All test cases passed!" << std::endl;
+    return 0;
+}
+```
+
+### Example 6
+[Code]
+#include <vector>
+#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <memory>
+
+// HuffmanNode class definition
+class HuffmanNode {
+public:
+    char value; // Character value for leaf nodes
+    std::shared_ptr<HuffmanNode> left; // Left child
+    std::shared_ptr<HuffmanNode> right; // Right child
+
+    // Constructor for leaf nodes
+    HuffmanNode(char val) : value(val), left(nullptr), right(nullptr) {}
+
+    // Constructor for internal nodes
+    HuffmanNode(std::shared_ptr<HuffmanNode> l, std::shared_ptr<HuffmanNode> r) : value('\0'), left(l), right(r) {}
+};
+
+// Function to decompress Huffman encoded data
+std::string huffman_decompress(const std::vector<bool>& compressed_data, const std::shared_ptr<HuffmanNode>& huffman_tree) {
+    std::string decompressed_data;
+    auto current_node = huffman_tree;
+
+    for (bool bit : compressed_data) {
+        if (bit) {
+            current_node = current_node->right;
+        } else {
+            current_node = current_node->left;
+        }
+
+        // Check if we reached a leaf node
+        if (!current_node->left && !current_node->right) {
+            decompressed_data += current_node->value;
+            current_node = huffman_tree; // Reset to root for the next symbol
+        }
+    }
+
+    return decompressed_data;
+}
+
+[Property]
+category: function implementation
+language: C++
+difficulty: medium
+concepts: decoding compressed data, binary tree traversal, byte array processing
+
+[Instruction]
+Write a C++ function `huffman_decompress` that takes two arguments: `compressed_data`, a byte array of 0/1 sequence representing Huffman compressed data, and `huffman_tree`, a Huffman tree that stores the actual data (each leaf is associated with a character). The function should return the original uncompressed data as `bytes`. Define the `HuffmanNode` class yourself as a general tree structure with a `children` list.
+
+[Response]
+The provided C++ code defines the HuffmanNode class as a general tree structure with a children list and an optional value attribute for leaf nodes. The huffman_decompress function processes the compressed_data using integer steps to traverse the Huffman tree, appending characters from leaf nodes to the decompressed output. It handles traversal efficiently and includes error checking for invalid steps.
+
+You can test it with different Huffman trees and compressed data as needed.
+
+Here's how we can implement this:
+
+```cpp
+#include <vector>
+#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <memory>
+
+// HuffmanNode class definition
+class HuffmanNode {
+public:
+    char value; // Character value for leaf nodes
+    std::shared_ptr<HuffmanNode> left; // Left child
+    std::shared_ptr<HuffmanNode> right; // Right child
+
+    // Constructor for leaf nodes
+    HuffmanNode(char val) : value(val), left(nullptr), right(nullptr) {}
+
+    // Constructor for internal nodes
+    HuffmanNode(std::shared_ptr<HuffmanNode> l, std::shared_ptr<HuffmanNode> r) : value('\0'), left(l), right(r) {}
+};
+
+// Function to decompress Huffman encoded data
+std::string huffman_decompress(const std::vector<bool>& compressed_data, const std::shared_ptr<HuffmanNode>& huffman_tree) {
+    std::string decompressed_data;
+    auto current_node = huffman_tree;
+
+    for (bool bit : compressed_data) {
+        if (bit) {
+            current_node = current_node->right;
+        } else {
+            current_node = current_node->left;
+        }
+
+        // Check if we reached a leaf node
+        if (!current_node->left && !current_node->right) {
+            decompressed_data += current_node->value;
+            current_node = huffman_tree; // Reset to root for the next symbol
+        }
+    }
+
+    return decompressed_data;
+}
+```
+
+In this implementation, each byte in `compressed_data` represents a bit, guiding the traversal of the Huffman tree. Characters are appended upon reaching leaf nodes and the result is then encoded to `bytes`.
+
+[Tests]
+You can test this function with a sample Huffman tree and compressed data to verify that the decompression works correctly:
+
+```cpp
+void test_huffman_decompress() {
+    // Test 1: Simple Huffman tree with "ab"
+    auto root = std::make_shared<HuffmanNode>();
+    auto left_child = std::make_shared<HuffmanNode>('a');
+    auto right_child = std::make_shared<HuffmanNode>('b');
+
+    root->children.push_back(left_child); // Step 0 -> 'a'
+    root->children.push_back(right_child); // Step 1 -> 'b'
+
+    std::vector<int> compressed_data1 = {0, 1};
+    std::string result1 = huffman_decompress(compressed_data1, root);
+    assert(result1 == "ab");
+
+    // Test 2: More complex tree with "abc"
+    auto mid_node = std::make_shared<HuffmanNode>();
+    auto third_child = std::make_shared<HuffmanNode>('c');
+
+    mid_node->children.push_back(left_child); // Step 0 -> 'a'
+    mid_node->children.push_back(right_child); // Step 1 -> 'b'
+    root->children.clear();
+    root->children.push_back(mid_node); // Step 0 -> Mid-node
+    root->children.push_back(third_child); // Step 1 -> 'c'
+
+    std::vector<int> compressed_data2 = {0, 0, 1, 1};
+    std::string result2 = huffman_decompress(compressed_data2, root);
+    assert(result2 == "abc");
+
+    // Test 3: Edge case with single leaf node
+    auto single_node_tree = std::make_shared<HuffmanNode>('z');
+    std::vector<int> compressed_data3 = {0, 0, 0};
+    std::string result3 = huffman_decompress(compressed_data3, single_node_tree);
+    assert(result3 == "zzz");
+
+    std::cout << "All tests passed!" << std::endl;
+}
+
+int main() {
+    test_huffman_decompress();
+    return 0;
+}
+```
+
+### Example 7
+[Code]
+#include <iostream>
+#include <string>
+#include <cmath>
+#include <iomanip>
+
+std::string format_size(std::size_t bytes) {
+    const char* units[] = {"bytes", "KB", "MB", "GB", "TB"};
+    const std::size_t unit_count = sizeof(units) / sizeof(units[0]);
+
+    double size = static_cast<double>(bytes);
+    std::size_t unit_index = 0;
+
+    while (size >= 1024.0 && unit_index < unit_count - 1) {
+        size /= 1024.0;
+        ++unit_index;
+    }
+
+    std::ostringstream formatted_size;
+    formatted_size << std::fixed << std::setprecision(1) << size << units[unit_index];
+    return formatted_size.str();
+}
+
+[Property]
+category: function implementation
+language: C++
+difficulty: easy
+concepts: arithmetic operations for size conversion, rounding numbers, dynamic unit selection, string interpolation
+
+[Instruction]
+Create a C++ function to format a file size in bytes into a human-readable string representation, using 'bytes', 'KB' (kilobytes), 'MB' (megabytes), 'GB' (gigabytes), or 'TB' (terabytes) units. The output should be rounded to one decimal place and follow the format: "{X.Y}{Unit}", where "Unit" is the appropriate size unit and "X.Y" is the rounded size. For example, `format_size(1024 * 512)` should return `'512.0KB'`, and `format_size(1024**2 - 1)` should return `'1024.0KB'`.
+
+[Response]
+To create such a function, we can use a loop to iterate through a predefined list of units (`['bytes', 'KB', 'MB', 'GB', 'TB']`) and check if the given number of bytes fits into the current unit by comparing it with 1024.0 and -1024.0 (for handling negative sizes). We'll keep dividing the number by 1024.0 until the correct unit is found where the number is less than 1024.0. Then, we'll format the result using the appropriate unit and the rounded size.
+
+```cpp
+#include <iostream>
+#include <string>
+#include <cmath>
+#include <iomanip>
+
+std::string format_size(std::size_t bytes) {
+    const char* units[] = {"bytes", "KB", "MB", "GB", "TB"};
+    const std::size_t unit_count = sizeof(units) / sizeof(units[0]);
+
+    double size = static_cast<double>(bytes);
+    std::size_t unit_index = 0;
+
+    while (size >= 1024.0 && unit_index < unit_count - 1) {
+        size /= 1024.0;
+        ++unit_index;
+    }
+
+    std::ostringstream formatted_size;
+    formatted_size << std::fixed << std::setprecision(1) << size << units[unit_index];
+    return formatted_size.str();
+}
+```
+
+This implementation handles both positive and negative file sizes and returns the formatted size as a string, even though negative sizes are not common in real-world scenarios.
+
+[Tests]
+We can write tests that cover both positive and negative sizes across different units to validate the correctness of the `format_size` function:
+
+```cpp
+void test_format_size() {
+    // Test cases
+    assert(format_size(512) == "512.0bytes");
+    assert(format_size(1024) == "1.0KB");
+    assert(format_size(1024 * 512) == "512.0KB");
+    assert(format_size(1024 * 1024 - 1) == "1024.0KB");
+    assert(format_size(1024 * 1024) == "1.0MB");
+    assert(format_size(1024ULL * 1024 * 1024) == "1.0GB");
+    assert(format_size(1024ULL * 1024 * 1024 * 1024) == "1.0TB");
+    assert(format_size(1024ULL * 1024 * 1024 * 1024 * 1024) == "1024.0TB");
+
+    std::cout << "All tests passed!" << std::endl;
+}
+
+int main() {
+    test_format_size();
+    return 0;
+}
+```
+
+### Example 8
+[Code]
+#include <iostream>
+#include <vector>
+#include <string>
+#include <unordered_map>
+#include <cassert>
+
+std::vector<std::string> encode_strings(const std::vector<std::string>& input) {
+    assert(std::all_of(input.begin(), input.end(), [](const std::string& s) { return !s.empty(); })); // Precondition check
+
+    std::unordered_map<std::string, int> counts;
+    std::vector<std::string> result(input.size());
+
+    for (size_t i = 0; i < input.size(); ++i) {
+        const std::string& str = input[i];
+        result[i] = str + std::string(counts[str]++, '*');
+    }
+
+    return result;
+}
+
+[Property]
+category: function implementation
+language: C++
+difficulty: easy
+concepts: list comprehension, unique string creation, precondition checking for type validation
+
+[Instruction]
+Design a C++ function to encode a list of strings into a unique list with the same length, order, and meaning. The new list is formed by appending asterisks (*) to duplicate strings. For instance, given ['a', 'a', 'b', 'a', 'c'], the function should return ['a', 'a*', 'b', 'a**', 'c'], while for ['a', 'b', 'c'] it should return ['a', 'b', 'c'] without any changes. Write assertions to ensure the input is a list of strings.
+
+Solve the problem in two lines of code, one for the precondition check and the other for the main logic.
+
+[Response]
+You can achieve this functionality by first ensuring the input meets your requirements using an `assert` statement with list comprehension. Then, use another list comprehension to iterate through the input list and append `'*'` to the strings. The number of `'*'` is the number of occurrences of the string before the current index.
+
+Here's how you can do it in two lines of C++ code:
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+#include <unordered_map>
+#include <cassert>
+
+std::vector<std::string> encode_strings(const std::vector<std::string>& input) {
+    assert(std::all_of(input.begin(), input.end(), [](const std::string& s) { return !s.empty(); })); // Precondition check
+
+    std::unordered_map<std::string, int> counts;
+    std::vector<std::string> result(input.size());
+
+    for (size_t i = 0; i < input.size(); ++i) {
+        const std::string& str = input[i];
+        result[i] = str + std::string(counts[str]++, '*');
+    }
+
+    return result;
+}
+```
+
+Note that although the function is concise, it is not the most efficient solution for large lists, as the `count` method has a time complexity of O(n) for each iteration.
+
+[Tests]
+You can test the function with the provided examples to ensure it correctly encodes the strings as expected:
+
+```cpp
+#include <iostream>
+#include <cassert>
+int main() {
+        // Test cases
+    assert((encode_strings({"a", "a", "b", "a", "c"}) == std::vector<std::string>{"a", "a*", "b", "a**", "c"}));
+    assert((encode_strings({"a", "b", "c"}) == std::vector<std::string>{"a", "b", "c"}));
+    assert((encode_strings({"apple", "apple", "banana"}) == std::vector<std::string>{"apple", "apple*", "banana"}));
+    assert((encode_strings({"hello", "hello", "hello"}) == std::vector<std::string>{"hello", "hello*", "hello**"}));
+    assert((encode_strings({}) == std::vector<std::string>{}));
+
+    std::cout << "All tests passed!" << std::endl;
+    return 0;
+}
+
+```
+
+### Example 9
+[Code]
+#include <iostream>
+#include <vector>
+#include <cassert>
+#include <cmath>
+
+std::vector<std::vector<int>> create_folds(const std::vector<int>& data, int count) {
+    if (count <= 0 || data.empty()) {
+        return {}; // Return empty if count is non-positive or data is empty
+    }
+
+    std::vector<std::vector<int>> folds;
+    size_t fold_size = data.size() / count;
+    size_t remainder = data.size() % count;
+    size_t start = 0;
+
+    for (int i = 0; i < count; ++i) {
+        size_t current_fold_size = fold_size + (i < remainder ? 1 : 0);
+        folds.emplace_back(data.begin() + start, data.begin() + start + current_fold_size);
+        start += current_fold_size;
+    }
+
+    return folds;
+}
+
+[Property]
+category: function implementation
+language: C++
+difficulty: medium
+concepts: data partitioning and slicing, learning from input-output examples
+
+[Instruction]
+Construct a C++ function `create_folds(data, count)` to create a list of folds from the given data, where each fold is a subsequence of the original data. The length of each fold should be approximately equal with at most a difference of 1. The function should satisfy the following assertions:
+
+```cpp
+assert create_folds(range(12), 2) == [range(0, 6), range(6, 12)]
+assert create_folds(range(8), 2) == [range(0, 4), range(4, 8)]
+assert create_folds(range(25), -5) == []
+assert create_folds(range(6), 2) == [range(0, 3), range(3, 6)]
+```
+
+[Response]
+To create a C++ function that generates a list of folds from given data with each fold having approximately equal length (with at most a difference of 1 between any two folds), you can follow these steps:
+
+1. Return an empty list immediately if `count` is non-positive since it's not possible to create a valid number of folds.
+2. Divide the total length of the data by `count`, rounding down, to get the minimum number of items each fold should have.
+3. Calculate the remainder to see how many extra items need to be distributed among the folds. They are distributed one by one to the first `remainder` folds.
+4. Use a loop to create each fold, adjusting the starting and ending indices based on the calculations above to ensure each fold has the correct number of items.
+
+Here's how you can implement this:
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <cassert>
+#include <cmath>
+
+std::vector<std::vector<int>> create_folds(const std::vector<int>& data, int count) {
+    if (count <= 0 || data.empty()) {
+        return {}; // Return empty if count is non-positive or data is empty
+    }
+
+    std::vector<std::vector<int>> folds;
+    size_t fold_size = data.size() / count;
+    size_t remainder = data.size() % count;
+    size_t start = 0;
+
+    for (int i = 0; i < count; ++i) {
+        size_t current_fold_size = fold_size + (i < remainder ? 1 : 0);
+        folds.emplace_back(data.begin() + start, data.begin() + start + current_fold_size);
+        start += current_fold_size;
+    }
+
+    return folds;
+}
+```
+
+This implementation ensures that each fold has an equal length with at most a difference of 1 between any two folds. It handles edge cases, such as a non-positive `count`, by returning an empty list as specified.
+
+[Tests]
+You can test your code with the provided assertions to verify that the function works correctly:
+
+```cpp
+void test_create_folds() {
+    // Helper function to create range
+    auto range = [](int start, int end) {
+        std::vector<int> r;
+        for (int i = start; i < end; ++i) r.push_back(i);
+        return r;
+    };
+
+    // Test cases
+    assert(create_folds(range(0, 12), 2) == std::vector<std::vector<int>>{range(0, 6), range(6, 12)});
+    assert(create_folds(range(0, 8), 2) == std::vector<std::vector<int>>{range(0, 4), range(4, 8)});
+    assert(create_folds(range(0, 25), -5) == std::vector<std::vector<int>>{});
+    assert(create_folds(range(0, 6), 2) == std::vector<std::vector<int>>{range(0, 3), range(3, 6)});
+
+    std::cout << "All tests passed!" << std::endl;
+}
+
+int main() {
+    test_create_folds();
+    return 0;
+}
+```
+
+### Example 10
+[Code]
+#include <iostream>
+#include <string>
+#include <stdexcept>
+#include <cctype>
+#include <cassert>
+
+int parse_duration(const std::string& duration) {
+    if (duration.empty()) {
+        throw std::invalid_argument("Empty duration string");
+    }
+
+    size_t index = 0;
+    while (index < duration.size() && std::isdigit(duration[index])) {
+        ++index;
+    }
+
+    if (index == 0 || index == duration.size()) {
+        throw std::invalid_argument("Invalid duration format");
+    }
+
+    int value = std::stoi(duration.substr(0, index));
+    std::string unit = duration.substr(index);
+
+    if (unit == "s" || unit == "sec") {
+        return value;
+    } else if (unit == "m" || unit == "min") {
+        return value * 60;
+    } else if (unit == "h" || unit == "hour") {
+        return value * 3600;
+    } else if (unit == "d" || unit == "day") {
+        return value * 86400;
+    } else {
+        throw std::invalid_argument("Invalid time unit");
+    }
+}
+
+[Property]
+category: function implementation
+language: C++
+difficulty: medium
+concepts: regular expression for pattern matching, dictionary lookup for suffix mapping, error handling with exceptions
+
+[Instruction]
+Create a C++ function that converts a string representation of a time duration into its total number of seconds.
+The input string should follow a format that includes a numeric part followed by a time unit suffix without any spaces between.
+The time unit can be seconds in the form of 's' or 'sec', minutes in the form of 'm' or 'min', hours in the form of 'h' or 'hour', and days in the form of 'd' or 'day' (units are in small case).
+If the input format is invalid, the function should raise a ValueError.
+
+For example, the function should pass the following assertions:
+
+```cpp
+assert parse_duration('15s') == 15
+assert parse_duration('2min') == 120
+assert parse_duration('1h') == 3600
+assert parse_duration('1d') == 86400
+try:
+    parse_duration('30')
+except ValueError as e:
+    pass
+```
+
+[Response]
+The desired function aims to transform a string representation into its total number of seconds. The implementation can be split into two parts:
+
+Input validation:
+
+1. The input string includes two parts: a number as the prefix and the unit as the suffix.
+2. We can use regular expression to assert the prefix must be a number (d+) and suffix must be one of s/sec/m/min/h/hour/d/day.
+3. If the input string cannot the regular expression, we raise a ValueError.
+
+Result computation:
+
+1. Based on the matches of regular expression, we capture the number and unit part.
+2. We convert the unit to seconds: 's'/'sec' -> 1 second, 'm'/'min' -> 60 seconds, 'h'/'hour' -> 3600 seconds, 'd'/'day' -> 86400 seconds.
+3. We multiply the seconds of the unit and the prefix number and return it as an integer.
+
+Here's how you can implement this:
+
+```cpp
+#include <iostream>
+#include <string>
+#include <stdexcept>
+#include <cctype>
+#include <cassert>
+
+int parse_duration(const std::string& duration) {
+    if (duration.empty()) {
+        throw std::invalid_argument("Empty duration string");
+    }
+
+    size_t index = 0;
+    while (index < duration.size() && std::isdigit(duration[index])) {
+        ++index;
+    }
+
+    if (index == 0 || index == duration.size()) {
+        throw std::invalid_argument("Invalid duration format");
+    }
+
+    int value = std::stoi(duration.substr(0, index));
+    std::string unit = duration.substr(index);
+
+    if (unit == "s" || unit == "sec") {
+        return value;
+    } else if (unit == "m" || unit == "min") {
+        return value * 60;
+    } else if (unit == "h" || unit == "hour") {
+        return value * 3600;
+    } else if (unit == "d" || unit == "day") {
+        return value * 86400;
+    } else {
+        throw std::invalid_argument("Invalid time unit");
+    }
+}
+```
+
+[Tests]
+You can test your code on various valid and invalid inputs to ensure that the function behaves as expected:
+
+```cpp
+#include <iostream>
+#include <string>
+#include <stdexcept>
+#include <cctype>
+#include <cassert>
+
+void test_parse_duration() {
+    // Valid test cases
+    assert(parse_duration("15s") == 15);
+    assert(parse_duration("2min") == 120);
+    assert(parse_duration("1h") == 3600);
+    assert(parse_duration("1d") == 86400);
+
+    // Invalid test cases
+    try {
+        parse_duration("30");
+        assert(false); // Should not reach here
+    } catch (const std::invalid_argument&) {
+        // Expected exception
+    }
+
+    try {
+        parse_duration("1x");
+        assert(false); // Should not reach here
+    } catch (const std::invalid_argument&) {
+        // Expected exception
+    }
+
+    try {
+        parse_duration("");
+        assert(false); // Should not reach here
+    } catch (const std::invalid_argument&) {
+        // Expected exception
+    }
+
+    std::cout << "All tests passed!" << std::endl;
+}
+
+int main() {
+    test_parse_duration();
+    return 0;
+}
+```
