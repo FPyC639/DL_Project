@@ -584,6 +584,47 @@ async def main():
 			request_params.append(params)
 	assert len(request_params) == len(examples)
 	print(f"Ready to make {len(request_params)} requests")
+	if args.use_vllm_server:
+		dispatch_requests = (
+				openai_client.dispatch_chat_completions
+				if args.prompting_mode == "chat"
+				else openai_client.dispatch_completions
+		)
+		if args.async_micro_batch_size == 1:
+			responses = await dispatch_requests(request_params, delay=args.delay)
+		else:
+			# Construct micro batches for async requests
+			assert args.num_sample_per_request == 1
+			request_params_batched: list[dict[str, Any]] = []
+			request_params_chunks = utils.chunked(
+					request_params, args.async_micro_batch_size
+			)
+			for request_params_chunk in request_params_chunks:
+					request_param = {
+							k: v
+							for k, v in request_params_chunk[0].items()
+							if k != "prompt"
+					}
+					request_param["prompt"] = [
+							req["prompt"] for req in request_params_chunk
+					]
+					request_params_batched.append(request_param)
+			n_async_chunks = (
+					args.num_batched_requests // args.async_micro_batch_size
+			)
+			assert len(request_params_batched) in [
+					n_async_chunks,
+					n_async_chunks + 1,
+			], (request_params_batched, n_async_chunks)
+			print(
+					f"Ready to make {len(request_params_batched)} batched async requests"
+			)
+			responses_batched = await dispatch_requests(
+					request_params_batched, delay=args.delay
+			)
+			responses = flatten_openai_responses(responses_batched)
+			assert len(responses) == len(examples)
+
 
 
 if __name__ == "__main__":
