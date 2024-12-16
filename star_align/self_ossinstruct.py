@@ -511,16 +511,19 @@ async def main():
 			from vllm import LLM, SamplingParams, RequestOutput
 			import torch
 
-		# Check for MPS availability
-			if torch.backends.mps.is_available():
-					device = "mps"
-					tensor_parallel_size = 1  # MPS currently does not support tensor parallelism
-			else:
-					device = "cpu"
-					tensor_parallel_size = 1
+		# TO RUN ON MAC
+			# if torch.backends.mps.is_available():
+			# 		device = "mps"
+			# 		tensor_parallel_size = 1  # MPS currently does not support tensor parallelism
+			# else:
+			# 		device = "cpu"
+			# 		tensor_parallel_size = 1
 
-			# Initialize the LLM engine with the appropriate device
-			engine = LLM(args.model, tensor_parallel_size=tensor_parallel_size, device=device)
+			# # Initialize the LLM engine with the appropriate device
+			# engine = LLM(args.model, tensor_parallel_size=tensor_parallel_size, device=device)
+                  
+            # WHEN GPU IS AVAILABLE
+			engine = LLM(args.model, tensor_parallel_size=torch.cuda.device_count())
 
 			def vllm_response_to_openai(response: RequestOutput) -> Completion:
 					created = 0
