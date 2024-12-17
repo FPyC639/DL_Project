@@ -11,6 +11,7 @@ from openai.types import CompletionChoice, Completion
 from datasets import Dataset, load_dataset
 from tqdm.auto import tqdm
 from transformers import HfArgumentParser
+import datasets
 
 import utils 
 
@@ -55,6 +56,7 @@ class Args:
         metadata={"help": "Path to the seed code snippets"}
     )
     max_new_data: int
+    push: str
     model: str
     instruct_mode: InstructMode
 
@@ -647,8 +649,8 @@ async def main():
                 end="\n\n",
             )
             n_succeeded += 1
-            f_out.write(json.dumps(data) + "\n")
-            f_out.flush()
+            new_ds = datasets.Dataset.from_dict(data)
+            new_ds.push_to_hub(args.push, private=True)
         total_requests = chunk_index * args.num_batched_requests + len(examples)
         pbar.set_description(f"Success ratio: {n_succeeded} / {total_requests}")
 
@@ -656,6 +658,7 @@ if __name__ == "__main__":
     ### ARGS FOR RUNNING THE SCRIPT
     # seed_data_files=an778/cppHeaderFiles
     # model=/project/phan/codellama/StarCoder
-    # instruct_mode = “S->C” -> “C->I” -> “I->R” (in order)
+    # instruct_mode = “S->C” | “C->I” | “I->R” (in order)
     # use_vllm_server=True
+    # push=an778/self-oss-instruct-sc2-concepts | an778/self-oss-instruct-sc2-instructions | an778/self-oss-instruct-sc2-responses (based on output of instruction mode)
     asyncio.run(main())
