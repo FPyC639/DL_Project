@@ -392,39 +392,38 @@ async def main():
     if args.use_vllm_server:
         openai_client = utils.OpenAIClient()
 
-    ### Modification for collab to fetch from HF data repo
-		raw_dataset: Dataset = load_dataset(
+    raw_dataset: Dataset = load_dataset(
         args.seed_data_files[0],
         split="train",
         num_proc=utils.N_CORES,
     )
-		id_key = "seed"
-		if os.getenv("IGNORE_SEED_CHECK") is None:
-				assert len(set(d[id_key] for d in raw_dataset)) == len(
-            raw_dataset
-        ), "Duplicate seeds appear in the dataset"
-		else:
-				print("[Warning] Ignoring seed check")
+    id_key = "seed"
+    if os.getenv("IGNORE_SEED_CHECK") is None:
+            assert len(set(d[id_key] for d in raw_dataset)) == len(
+        raw_dataset
+    ), "Duplicate seeds appear in the dataset"
+    else:
+        print("[Warning] Ignoring seed check")
 
     # Every run should produce the same data as long as the default params are not changed
-		start_index = args.seed_code_start_index
-		end_index = min(start_index + args.max_new_data, len(raw_dataset))
-		raw_dataset = raw_dataset.select(range(start_index, end_index))
-		dataset = raw_dataset.to_list()
+    start_index = args.seed_code_start_index
+    end_index = min(start_index + args.max_new_data, len(raw_dataset))
+    raw_dataset = raw_dataset.select(range(start_index, end_index))
+    dataset = raw_dataset.to_list()
 
-		assert args.prompting_mode == "completion", "Only completion is supported for now"
-		fewshot = get_ossinstruct_fewshots()
-		data_fingerprint = args.fingerprint(fewshot)
-		timestamp = utils.timestamp()
+    assert args.prompting_mode == "completion", "Only completion is supported for now"
+    fewshot = get_ossinstruct_fewshots()
+    data_fingerprint = args.fingerprint(fewshot)
+    timestamp = utils.timestamp()
 
-		if args.continue_from is not None:
-				if os.getenv("IGNORE_FINGERPRINT") is None:
-						assert (
+    if args.continue_from is not None:
+        if os.getenv("IGNORE_FINGERPRINT") is None:
+            assert (
                 data_fingerprint in args.continue_from
             ), f"Fingerprint mismatch: {data_fingerprint}"
-				assert f"-{start_index}-" in args.continue_from, "Index mismatch"
-				old_path = Path(args.continue_from)
-				assert old_path.exists()
+        assert f"-{start_index}-" in args.continue_from, "Index mismatch"
+        old_path = Path(args.continue_from)
+        assert old_path.exists()
         old_data = utils.read_jsonl(old_path)
         assert len(old_data) > 0
         last_seed = old_data[-1][id_key]
@@ -433,6 +432,7 @@ async def main():
             idx for idx, d in enumerate(dataset) if d[id_key] == last_seed
         )
         n_skipped = seed_index + 1
+        # n_skipped = last_index - start_index + 1
         print(f"Continuing from {old_path} with {n_skipped} seed snippets skipped")
         f_out = old_path.open("a")
     else:
@@ -457,44 +457,42 @@ async def main():
         from vllm import LLM, SamplingParams, RequestOutput
         import torch
 
-				# TO RUN ON MAC
-				# if torch.backends.mps.is_available():
-				# 		device = "mps"
-				# 		tensor_parallel_size = 1  # MPS currently does not support tensor parallelism
-				# else:
-				# 		device = "cpu"
-				# 		tensor_parallel_size = 1
+        # # TO RUN ON MAC
+        # if torch.backends.mps.is_available():
+        #     device = "mps"
+        #     tensor_parallel_size = 1  # MPS currently does not support tensor parallelism
+        # else:
+        #     device = "cpu"
+        #     tensor_parallel_size = 1
 
-				# # Initialize the LLM engine with the appropriate device
-				# engine = LLM(args.model, tensor_parallel_size=tensor_parallel_size, device=device)
-                  
-        # WHEN GPU IS AVAILABLE
-				engine = LLM(args.model, tensor_parallel_size=torch.cuda.device_count())
+        # # Initialize the LLM engine with the appropriate device
+        # engine = LLM(args.model, tensor_parallel_size=tensor_parallel_size, device=device)
+        engine = LLM(args.model, tensor_parallel_size=torch.cuda.device_count())
 
-				def vllm_response_to_openai(response: RequestOutput) -> Completion:
-					created = 0
-					choices = list[CompletionChoice]()
-					for output in response.outputs:
-							choice = CompletionChoice(
-									text=output.text,
-									index=0,
-									finish_reason=(
-											"stop" if output.finish_reason == "stop" else "length"
-									),
-							)
-							choices.append(choice)
-					model = "not-specified"
-					id = response.request_id
-					return Completion(
-							id=id,
-							created=created,
-							object="text_completion",
-							model=model,
-							choices=choices,
-							system_fingerprint="None",
-					)
+        def vllm_response_to_openai(response: RequestOutput) -> Completion:
+            created = 0
+            choices = list[CompletionChoice]()
+            for output in response.outputs:
+                choice = CompletionChoice(
+                    text=output.text,
+                    index=0,
+                    finish_reason=(
+                        "stop" if output.finish_reason == "stop" else "length"
+                    ),
+                )
+                choices.append(choice)
+            model = "not-specified"
+            id = response.request_id
+            return Completion(
+                id=id,
+                created=created,
+                object="text_completion",
+                model=model,
+                choices=choices,
+                system_fingerprint="None",
+            )
 
-			for chunk_index, examples in enumerate(pbar):
+    for chunk_index, examples in enumerate(pbar):
         # map to the index in the original seed snippets
         effective_index = (
             chunk_index * args.num_batched_requests + start_index + n_skipped
@@ -503,6 +501,7 @@ async def main():
         if chunk_index > 0 and args.sleep is not None:
             print(f"Sleeping for {args.sleep} seconds...")
             time.sleep(args.sleep)
+        # assert index + start_index == example["index"]
         request_params = list[dict[str, Any]]()
         all_prompts = list[str]()
         for index, example in enumerate(examples):
