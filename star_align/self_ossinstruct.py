@@ -357,7 +357,7 @@ def build_kwargs(instruct_mode: InstructMode, example: dict) -> dict[str, str]:
         kwargs["snippet"] = example["seed"]
     elif instruct_mode == "C->I":
         lang = example.get("data_dir", "dummy_key_not_in_example")
-        language = LANGUAGE_MAP.get(lang, "Python")
+        language = LANGUAGE_MAP.get(lang, "C++")
         property = Property.random_exercise(example["concepts"], language=language)
         property_prompt = property.prompt()
         kwargs["property"] = property_prompt
@@ -393,9 +393,12 @@ async def main():
         ), "Only support 1 sample with batched async requests"
     if args.use_vllm_server:
         openai_client = utils.OpenAIClient()
-
+    path = args.seed_data_files
+    for root, dir, files in os.walk(path):
+        fh = os.path.join(path+files[0])
     raw_dataset: Dataset = load_dataset(
-        args.seed_data_files[0],
+        "json",
+        fh,
         split="train",
         num_proc=utils.N_CORES,
     )
