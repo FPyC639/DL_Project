@@ -1,7 +1,18 @@
 # Deep Learning DS 677-003 Class Project
 ## New Jersey Institute of Technology
 
-Using the StarCoder Project our team of Avina, and Jose worked on generating a Code to Snippets, Snippets to Instructions, and Instructions to Responses from the BigCode Project template for the C++ language. Our team worked on first gathering seeds from a 2000 samples and captured 214 functions. Then we used an A100 GPU Cluster to run the code and perform the aforementioned task. On the Linux server we managed to get 202 Responses at the end of the project.
+# Generating Responses from Code using StarCoder Large Language Model
+
+Avina Akarmi, Jose M Serra Jr
+
+## I. Introduction
+
+Using a Large Language Model for the target language of C++ we generated responses from code through an iterative process as shown in the BigCoder Project. This process involves using prompts to the Large Language Model The first epoch of work consisted of downloading the code that is going to be used in this process. The first Python script that was used allowed us to scrape a sample from HuggingFace Repo where the pointers to the S3 Bucket for the code, and then after downloading the data it was used to ensure validated that the data had top-level functions. This sets up the project to then follow a pipeline for users to be able generate instructions from coding snippets, and responses from instructions. This is done through a series of Linux scripts that then execute the Python script with the various parameters. This method allows modularity for the variations of the languages that can be continued being done.
+
+
+## II. Dataset
+
+ The dataset consisted of C++ code gathered through the BigCode Project. Our main task was to filter for code that did not have any pending tasks for an individual to do as well as being a top-level function. A top-level function is a function that is not nested in another function as well as not part of a class definition in the object-oriented programming paradigm. 
 
 # Future Work
 
